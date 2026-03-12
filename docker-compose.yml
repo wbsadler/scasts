@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scasts_app
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - scasts-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: scasts_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - scasts-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: scasts_mysql
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-scasts}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_USER: ${DB_USERNAME:-scasts}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - scasts-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  scasts-network:
+    driver: bridge
